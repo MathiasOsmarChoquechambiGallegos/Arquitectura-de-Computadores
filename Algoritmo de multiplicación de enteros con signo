@@ -1,0 +1,28 @@
+#include <iostream>
+#include <bitset>
+using namespace std;
+
+void algoritmo_booth(int multiplicando, int multiplicador, int bits){
+    int A{0};
+    int M =multiplicando;
+    int Q = multiplicador;
+    int Q_1{0};
+    int contador = bits;
+    
+    while(contador >= 0){
+        int Q0 = Q&1;
+        if(Q0 == 0 && Q_1 == 1){
+            A+= M;
+        } else if (Q0 == 1 && Q_1 == 0){
+            A-= M;
+        }
+        contador--;
+    }
+}
+int main()
+{
+    bitset<8> x(1);
+    cout << x;
+
+    return 0;
+}
