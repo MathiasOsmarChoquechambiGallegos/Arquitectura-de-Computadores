@@ -7,7 +7,7 @@ int complementoDos(int x, int n) {
     return ((~x) + 1) & mask;
 }
 
-//Corrimiento aritmético a la derecha sobre (A,Q,Q-1)
+// Corrimiento aritmético a la derecha sobre (A,Q,Q-1)
 void corrimiento(int &A, int &Q, int &Q_1, int n) {
     int signA = (A >> (n-1)) & 1; //bit de signo de A
     Q_1 = Q & 1;            
@@ -24,36 +24,29 @@ void booth(int multiplicando, int multiplicador, int n) {
     int Q = multiplicador;
     int Q_1 = 0;
     int count = n;
-
     cout << "Iter\tA\t\tQ\tQ-1\n";
     cout << "------------------------------------\n";
 
     while (count > 0) {
         int Q0 = Q & 1;
-
         if (Q0 == 0 && Q_1 == 1) {
             A += M; 
         } else if (Q0 == 1 && Q_1 == 0) {
             A -= M;
         }
-
-        cout << count << "\t" << bitset<8>(A) << "\t"
-             << bitset<8>(Q) << "\t" << Q_1 << endl;
-
+        cout << count <<"\t"<< bitset<8>(A)<<"\t"<< bitset<8>(Q) << "\t" << Q_1 << endl;
         corrimiento(A, Q, Q_1, n);
         count--;
     }
-
     //Concatenacion en resultado 2n bit
     long resultado = ((long)A << n) | (Q & ((1 << n) - 1));
-
-    cout << "\nResultado en binario: " << bitset<16>(resultado) << endl;
+                        //se puede cambiar el tamaño de bits a mostrar
+    cout << "\nResultado en binario: " << bitset<8>(resultado) << endl;
     cout << "Resultado en decimal: " << resultado << endl;
 }
 
 int main() {
     int multiplicando, multiplicador, bits;
-
     cout << "Ingrese el multiplicando: ";
     cin >> multiplicando;
     cout << "Ingrese el multiplicador: ";
@@ -62,6 +55,5 @@ int main() {
     cin >> bits;
 
     booth(multiplicando, multiplicador, bits);
-
     return 0;
 }
