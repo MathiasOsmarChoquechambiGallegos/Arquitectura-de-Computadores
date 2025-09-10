@@ -2,27 +2,66 @@
 #include <bitset>
 using namespace std;
 
-void algoritmo_booth(int multiplicando, int multiplicador, int bits){
-    int A{0};
-    int M =multiplicando;
-    int Q = multiplicador;
-    int Q_1{0};
-    int contador = bits;
-    
-    while(contador >= 0){
-        int Q0 = Q&1;
-        if(Q0 == 0 && Q_1 == 1){
-            A+= M;
-        } else if (Q0 == 1 && Q_1 == 0){
-            A-= M;
-        }
-        contador--;
-    }
+int complementoDos(int x, int n) {
+    int mask = (1 << n) - 1;
+    return ((~x) + 1) & mask;
 }
-int main()
-{
-    bitset<8> x(1);
-    cout << x;
+
+//Corrimiento aritmético a la derecha sobre (A,Q,Q-1)
+void corrimiento(int &A, int &Q, int &Q_1, int n) {
+    int signA = (A >> (n-1)) & 1; //bit de signo de A
+    Q_1 = Q & 1;            
+
+    //Desplazar Q y meter bit menos significativo de A en el bit mas significativo de Q
+    Q = (Q >> 1) | ((A & 1) << (n-1));
+    //Desplazar A (aritmético -> conservar signo)
+    A = (A >> 1) | (signA << (n-1));
+}
+
+void booth(int multiplicando, int multiplicador, int n) {
+    int A = 0;
+    int M = multiplicando;
+    int Q = multiplicador;
+    int Q_1 = 0;
+    int count = n;
+
+    cout << "Iter\tA\t\tQ\tQ-1\n";
+    cout << "------------------------------------\n";
+
+    while (count > 0) {
+        int Q0 = Q & 1;
+
+        if (Q0 == 0 && Q_1 == 1) {
+            A += M; 
+        } else if (Q0 == 1 && Q_1 == 0) {
+            A -= M;
+        }
+
+        cout << count << "\t" << bitset<8>(A) << "\t"
+             << bitset<8>(Q) << "\t" << Q_1 << endl;
+
+        corrimiento(A, Q, Q_1, n);
+        count--;
+    }
+
+    //Concatenacion en resultado 2n bit
+    long resultado = ((long)A << n) | (Q & ((1 << n) - 1));
+
+    cout << "\nResultado en binario: " << bitset<16>(resultado) << endl;
+    cout << "Resultado en decimal: " << resultado << endl;
+}
+
+int main() {
+    int multiplicando, multiplicador, bits;
+
+    cout << "Ingrese el multiplicando: ";
+    cin >> multiplicando;
+    cout << "Ingrese el multiplicador: ";
+    cin >> multiplicador;
+    cout << "Ingrese el numero de bits: ";
+    cin >> bits;
+
+    booth(multiplicando, multiplicador, bits);
 
     return 0;
 }
