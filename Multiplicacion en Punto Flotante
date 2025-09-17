@@ -1,0 +1,104 @@
+#include <iostream>
+#include <bitset>
+#include <cstdint>
+#include <cstring>
+using namespace std;
+
+//Convierte un número en coma flotante (float) a su representación binaria (32 bits)
+uint32_t flotanteABits(float numero) {
+    uint32_t bits;
+    memcpy(&bits, &numero, sizeof(numero));
+    return bits;
+}
+
+//Convierte un patrón de 32 bits a su equivalente en float
+float bitsAFlotante(uint32_t bits) {
+    float numero;
+    memcpy(&numero, &bits, sizeof(bits));
+    return numero;
+}
+
+//Imprime en consola el valor en float y su representación en binario
+void mostrarBits(float numero, const string &etiqueta) {
+    uint32_t bits = flotanteABits(numero);
+    cout << etiqueta << " (" << numero << "): "
+         << bitset<32>(bits) << endl;
+}
+
+int main() {
+    float x, y;
+    cout << "Ingrese el primer número decimal: ";
+    cin >> x;
+    cout << "Ingrese el segundo número decimal: ";
+    cin >> y;
+
+    //Mostrar la representación binaria de los valores ingresados
+    mostrarBits(x, "X");
+    mostrarBits(y, "Y");
+
+    //Obtener las partes binarias
+    uint32_t bitsX = flotanteABits(x);
+    uint32_t bitsY = flotanteABits(y);
+
+    //Extraer signo, exponente y mantisa
+    int signoX = (bitsX >> 31) & 1;
+    int signoY = (bitsY >> 31) & 1;
+    int exponenteX = (bitsX >> 23) & 0xFF;
+    int exponenteY = (bitsY >> 23) & 0xFF;
+    uint32_t mantisaX = bitsX & 0x7FFFFF;
+    uint32_t mantisaY = bitsY & 0x7FFFFF;
+
+    //Caso especial: alguno de los dos números es cero
+    if ((exponenteX == 0 && mantisaX == 0) || (exponenteY == 0 && mantisaY == 0)) {
+        cout << "Como uno de los operando es 0, entonces el resultado es 0" << endl;
+        return 0;
+    }
+
+    //Añadir el bit implícito
+    mantisaX |= (1 << 23);
+    mantisaY |= (1 << 23);
+
+    //El signo final es xor de los signos de entrada
+    int signoResultado = signoX ^ signoY;
+
+    //Sumar exponentes y ajustar el bias
+    int exponenteResultado = exponenteX + exponenteY - 127;
+
+    // Multiplicación de mantisas
+    uint64_t productoMantisas = (uint64_t)mantisaX * (uint64_t)mantisaY;
+
+    //Normalización del resultado
+    if (productoMantisas & (1ULL << 47)) {
+        //Se desborda un bit extra
+        productoMantisas >>= 24;
+        exponenteResultado++;
+    } else {
+        productoMantisas >>= 23;
+    }
+
+    //Extraer la mantisa final (23 bits)
+    uint32_t mantisaFinal = productoMantisas & 0x7FFFFF;
+
+    //Comprobación underflow / overflow
+    if (exponenteResultado <= 0) {
+        cout << "underflow, resultado = 0" << endl;
+        return 0;
+    } else if (exponenteResultado >= 255) {
+        cout << "overflow, resultado = infinito" << endl;
+        uint32_t bitsResultado = (signoResultado << 31) | (0xFF << 23);
+        float resultado = bitsAFlotante(bitsResultado);
+        mostrarBits(resultado, "resultado");
+        return 0;
+    }
+
+    //Reconstrucción del número final
+    uint32_t bitsResultado = (signoResultado << 31) | ((exponenteResultado & 0xFF) << 23) | mantisaFinal;
+    float resultadoEmulado = bitsAFlotante(bitsResultado);
+
+    // Comparar con la multiplicación real de C++
+    mostrarBits(resultadoEmulado, "Resultado (emulado paso a paso)");
+
+    cout << "Valor emulado = " << resultadoEmulado << endl;
+
+    return 0;
+}
