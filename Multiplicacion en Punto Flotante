@@ -17,7 +17,6 @@ float bitsAFlotante(uint32_t bits) {
     memcpy(&numero, &bits, sizeof(bits));
     return numero;
 }
-
 //Imprime en consola el valor en float y su representación en binario
 void mostrarBits(float numero, const string &etiqueta) {
     uint32_t bits = flotanteABits(numero);
@@ -45,18 +44,17 @@ int main() {
     int signoY = (bitsY >> 31) & 1;
     int exponenteX = (bitsX >> 23) & 0xFF;
     int exponenteY = (bitsY >> 23) & 0xFF;
-    uint32_t mantisaX = bitsX & 0x7FFFFF;
-    uint32_t mantisaY = bitsY & 0x7FFFFF;
+    uint32_t significandoX = bitsX & 0x7FFFFF;
+    uint32_t significandoY = bitsY & 0x7FFFFF;
 
     //Caso especial: alguno de los dos números es cero
-    if ((exponenteX == 0 && mantisaX == 0) || (exponenteY == 0 && mantisaY == 0)) {
+    if ((exponenteX == 0 && significandoX == 0) || (exponenteY == 0 && significandoY == 0)) {
         cout << "Como uno de los operando es 0, entonces el resultado es 0" << endl;
         return 0;
     }
-
     //Añadir el bit implícito
-    mantisaX |= (1 << 23);
-    mantisaY |= (1 << 23);
+    significandoX |= (1 << 23);
+    significandoY |= (1 << 23);
 
     //El signo final es xor de los signos de entrada
     int signoResultado = signoX ^ signoY;
@@ -64,20 +62,20 @@ int main() {
     //Sumar exponentes y ajustar el bias
     int exponenteResultado = exponenteX + exponenteY - 127;
 
-    // Multiplicación de mantisas
-    uint64_t productoMantisas = (uint64_t)mantisaX * (uint64_t)mantisaY;
+    // Multiplicación de significandos
+    uint64_t productoSignificandos = (uint64_t)significandoX * (uint64_t)significandoY;
 
     //Normalización del resultado
-    if (productoMantisas & (1ULL << 47)) {
+    if (productoSignificandos & (1ULL << 47)) {
         //Se desborda un bit extra
-        productoMantisas >>= 24;
+        productoSignificandos >>= 24;
         exponenteResultado++;
     } else {
-        productoMantisas >>= 23;
+        productoSignificandos >>= 23;
     }
 
     //Extraer la mantisa final (23 bits)
-    uint32_t mantisaFinal = productoMantisas & 0x7FFFFF;
+    uint32_t significandoFinal = productoSignificandos & 0x7FFFFF;
 
     //Comprobación underflow / overflow
     if (exponenteResultado <= 0) {
@@ -92,13 +90,11 @@ int main() {
     }
 
     //Reconstrucción del número final
-    uint32_t bitsResultado = (signoResultado << 31) | ((exponenteResultado & 0xFF) << 23) | mantisaFinal;
+    uint32_t bitsResultado = (signoResultado << 31) | ((exponenteResultado & 0xFF) << 23) | significandoFinal;
     float resultadoEmulado = bitsAFlotante(bitsResultado);
 
     // Comparar con la multiplicación real de C++
     mostrarBits(resultadoEmulado, "Resultado (emulado paso a paso)");
-
     cout << "Valor emulado = " << resultadoEmulado << endl;
-
     return 0;
 }
