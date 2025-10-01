@@ -1,0 +1,94 @@
+.data
+array:   .word  2, 5, 3, 4, 7, 3, 8, 1, 9      # Arreglo desordenado
+n:       .word  9                     # Cantidad de elementos
+msg_in:  .asciiz "Arreglo inicial:\n"
+msg_out: .asciiz "\nArreglo ordenado:\n"
+
+.text
+.globl main
+
+main:
+    # Imprimir arreglo inicial
+    li $v0,4
+    la $a0,msg_in
+    syscall
+    la $a0,array
+    lw $a1,n
+    jal print_array
+
+    # Inicializar punteros
+    la $a0,array            # $a0 = inicio
+    la $a1,array            # $a1 = fin
+    lw $t0,n
+    subi $t0,$t0,1
+    sll $t0,$t0,2           # (n-1)*4 en bytes
+    add $a1,$a1,$t0         # apunta al último elemento
+
+sort:
+    beq $a0,$a1,done        # ¿inicio == fin? terminar
+    jal max                 # buscar máximo en [a0, a1]
+
+    lw $t0,0($a1)           # cargar último elemento
+    sw $t0,0($v0)           # mover último ? pos del max
+    sw $v1,0($a1)           # mover max ? último
+
+    addi $a1,$a1,-4         # reducir tamaño (fin-1)
+    j sort
+
+done:
+    # Imprimir arreglo ordenado
+    li $v0,4
+    la $a0,msg_out
+    syscall
+    la $a0,array
+    lw $a1,n
+    jal print_array
+
+    # Salir
+    li $v0,10
+    syscall
+
+max:
+    move $t1,$a0            # puntero actual
+    lw $v1,0($t1)           # valor máximo inicial
+    move $v0,$t1            # dirección del máximo inicial
+
+max_loop:
+    beq $t1,$a1,max_end     #estan en el final? salir
+    addi $t1,$t1,4
+    lw $t2,0($t1)
+    ble $t2,$v1,max_loop    #si el elemento es menor o igual al valor maximo continuar
+    move $v1,$t2            #nuevo máximo
+    move $v0,$t1            #nueva dirección
+
+    j max_loop
+max_end:
+    jr $ra
+
+print_array:
+    move $t0,$a0            # puntero
+    move $t1,$a1            # contador
+
+print_loop:
+    beqz $t1,print_end
+    lw $a0,0($t0)
+    li $v0,1
+    syscall                 # imprimir número
+
+    li $v0,4
+    la $a0,space
+    syscall                 # espacio
+
+    addi $t0,$t0,4
+    addi $t1,$t1,-1
+    j print_loop
+
+print_end:
+    li $v0,4
+    la $a0,newline
+    syscall
+    jr $ra
+
+.data
+space:   .asciiz " "
+newline: .asciiz "\n"
