@@ -1,0 +1,93 @@
+.data
+array:   .word  2, 5, 3, 4, 7, 3, 8, 1, 9      #array desordenado
+n:       .word  9                              #tamaño
+msg_in:  .asciiz "Arreglo inicial:\n"
+msg_out: .asciiz "\nArreglo ordenado:\n"
+
+.text
+.globl main
+
+main:
+    #Imprimir arreglo inicial
+    li $v0,4
+    la $a0,msg_in
+    syscall
+    la $a0,array
+    lw $a1,n
+    jal print_array
+
+    #Inicializar punteros
+    la $a0,array            # $a0 = inicio
+    la $a1,array            # $a1 = fin
+    lw $t0,n
+    subi $t0,$t0,1
+    sll $t0,$t0,2         
+    add $a1,$a1,$t0         #apunta al último elemento
+
+sort:
+    beq $a0,$a1,done        #si el inicio y final son iguales, fin
+    jal max                 #buscar máximo en [a0, a1]
+
+    lw $t0,0($a0)           #cargar primer elemento
+    sw $t0,0($v0)           # mover primer elem a la posicion del max
+    sw $v1,0($a0)           #mover max al inicio
+
+    addi $a0,$a0,4          #aumentar inicio
+    j sort
+
+done:
+    #Imprimir arreglo ordenado
+    li $v0,4
+    la $a0,msg_out
+    syscall
+    la $a0,array
+    lw $a1,n
+    jal print_array
+
+    li $v0,10
+    syscall
+
+max:
+    move $t1,$a0            #puntero actual
+    lw $v1,0($t1)           #valor máximo inicial
+    move $v0,$t1            #dirección del máximo inicial
+
+max_loop:
+    beq $t1,$a1,max_end     #si estan en el final, fin
+    addi $t1,$t1,4
+    lw $t2,0($t1)
+    ble $t2,$v1,max_loop    #si el elemento es menor o igual al max, continuar
+    move $v1,$t2            #nuevo máximo
+    move $v0,$t1            #nueva dirección
+
+    j max_loop
+max_end:
+    jr $ra
+
+print_array:
+    move $t0,$a0            
+    move $t1,$a1          
+
+print_loop:
+    beqz $t1,print_end
+    lw $a0,0($t0)
+    li $v0,1
+    syscall                 #imprimir número
+
+    li $v0,4
+    la $a0,space
+    syscall              
+
+    addi $t0,$t0,4
+    addi $t1,$t1,-1
+    j print_loop
+
+print_end:
+    li $v0,4
+    la $a0,newline
+    syscall
+    jr $ra
+
+.data
+space:   .asciiz " "
+newline: .asciiz "\n"
