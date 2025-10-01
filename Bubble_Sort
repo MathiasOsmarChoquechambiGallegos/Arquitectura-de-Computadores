@@ -1,0 +1,83 @@
+.data
+array:   .word  5, 2, 9, 1, 7, 3, 4       
+n:       .word  7                     
+msg_in:  .asciiz "Arreglo inicial:\n"
+msg_out: .asciiz "\nArreglo ordenado (Bubble Sort):\n"
+space:   .asciiz " "
+newline: .asciiz "\n"
+
+.text
+.globl main
+
+main:
+    #imprimir arreglo inicial
+    li $v0,4
+    la $a0,msg_in
+    syscall
+    la $a0,array
+    lw $a1,n
+    jal print_array
+
+    lw $t0,n              #t0 = tamaño n
+    addi $t0,$t0,-1       #t0 = n-1 
+
+outer_loop:
+    blez $t0,done_sort    
+    la $t1,array          
+    move $t2,$t0          
+
+inner_loop:
+    beqz $t2,next_outer   
+    lw $t3,0($t1)        
+    lw $t4,4($t1)        
+
+    ble $t3,$t4,no_swap   #si elemento actual es menor a elemento siguiente, no intercambio
+
+    # Intercambio
+    sw $t4,0($t1)
+    sw $t3,4($t1)
+
+no_swap:
+    addi $t1,$t1,4        #avanzar al siguiente elemento
+    addi $t2,$t2,-1       #restar 1 al contador interno
+    j inner_loop
+
+next_outer:
+    addi $t0,$t0,-1       #restar 1 a las pasadas externas
+    j outer_loop
+
+done_sort:
+    #imprimir arreglo ordenado
+    li $v0,4
+    la $a0,msg_out
+    syscall
+    la $a0,array
+    lw $a1,n
+    jal print_array
+
+    li $v0,10
+    syscall
+
+print_array:
+    move $t0,$a0          
+    move $t1,$a1        
+
+print_loop:
+    beqz $t1,print_end
+    lw $a0,0($t0)
+    li $v0,1
+    syscall               #imprimir número
+
+    li $v0,4
+    la $a0,space
+    syscall              
+
+    addi $t0,$t0,4
+    addi $t1,$t1,-1
+    j print_loop
+
+print_end:
+    li $v0,4
+    la $a0,newline
+    syscall
+    jr $ra
